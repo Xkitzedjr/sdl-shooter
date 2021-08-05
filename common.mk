@@ -16,6 +16,7 @@ _OBJS += text.o
 _OBJS += background.o
 _OBJS += highscores.o
 _OBJS += title.o
+_OBJS += multi.o
 
 OBJS = $(patsubst %,$(OUT)/%,$(_OBJS))
 

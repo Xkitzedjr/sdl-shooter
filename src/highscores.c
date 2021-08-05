@@ -43,6 +43,9 @@ static void logic(void) {
 
         if (app.keyboard[SDL_SCANCODE_SPACE])
             initStage();
+
+        if (app.keyboard[SDL_SCANCODE_M])
+            initMulti();
     }
 
     if (++cursorBlink >= FPS) {

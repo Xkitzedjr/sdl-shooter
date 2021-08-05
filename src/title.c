@@ -23,6 +23,8 @@ static void logic(void) {
         initHighscore();
     if (app.keyboard[SDL_SCANCODE_SPACE])
         initStage();
+    if (app.keyboard[SDL_SCANCODE_M])
+        initMulti();
 }
 
 static void draw(void) {
