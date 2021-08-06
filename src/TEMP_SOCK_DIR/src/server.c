@@ -1,53 +1,55 @@
 #include "common.h"
 
-#define PORT 8080
-#define BACKLOG 3
-#define BUFFER_LEN 1024
+#define PORT 18000
 
 extern void err_n_die(const char *fmt, ...);
+extern char *bin2hex(const unsigned char *input, size_t len);
 
 int main(int arc, char **argv) {
-  int serverfd, new_socket, valread;
-  struct sockaddr_in address;
-  int opt = 1;
-  int addrlen = sizeof(address);
-  char buffer[BUFFER_LEN];
-  char *hello = "hello from server!";
+  int listenfd, connfd, n;
+  struct sockaddr_in servaddr;
+  uint8_t buff[MAXLINE+1];
+  uint8_t recvline[MAXLINE+1];
 
-  memset(buffer, 0, sizeof(char) * 1024);
+  if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    err_n_die("socket error");
 
-  // create socket (domain, type, protocal)
-  if (serverfd = socket(AF_INET, SOCK_STREAM, 0) < 0)
-    err_n_die("error creating server socket!");
+  memset(&servaddr, 0, sizeof(servaddr));
+  servaddr.sin_family = AF_INET;
+  servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  servaddr.sin_port = htons(PORT);
+  
+  if ((bind(listenfd, (SA *) &servaddr, sizeof(servaddr))) < 0)
+    err_n_die("bind error");
 
-  // set socket (optional)
-  if (setsockopt(serverfd, SOL_SOCKET, 
-        SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
-    err_n_die("error setting socket!");
+  if ((listen(listenfd, 10)) < 0)
+    err_n_die("listen error");
 
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons( PORT );
+  while(1) {
+    struct sockaddr_in addr;
+    socklen_t addr_len;
 
-  // bind socket to address and port in address
-  if (bind(serverfd, (struct sockaddr *)&address, sizeof(address)) < 0)
-    err_n_die("error binding socket!");
+    printf("waiting for a connection on port %d\n", PORT);
+    fflush(stdout);
+    connfd = accept(listenfd, (SA *) NULL, NULL);
 
-  // set socket to listen for requests
-  // backlog is the maximum amount of reqs that can
-  // be in the queue, sends ECONNREFUESD if max is reached
-  if (listen(serverfd, BACKLOG) < 0)
-    err_n_die("error listening!");
+    memset(recvline, 0, MAXLINE);
 
-  // extracts the first req in queue and creates a socket
-  // that is connected, returning a file desc refering to
-  // that socket
-  if ((new_socket = accept(serverfd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0)
-    err_n_die("error accepting");
+    while((n = read(connfd, recvline, MAXLINE-1)) > 0) {
+      fprintf(stdout, "\nData Recieved\nHex:\n%s\nString:\n%s", bin2hex(recvline, n), recvline);
 
-  valread = read( new_socket, buffer, BUFFER_LEN );
-  printf("%s\n", buffer);
-  send(new_socket, hello, strlen(hello), 0);
-  printf("message sent\n");
-  return 0;
+      if (recvline[n-1] == '\n')
+        break;
+
+      memset(recvline, 0, MAXLINE);
+    }
+
+    if (n < 0)
+      err_n_die("read error");
+
+    snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\n\r\nHello From Sever!\n");
+
+    write(connfd, (char*)buff, strlen((char *)buff));
+    close(connfd);
+  }
 }

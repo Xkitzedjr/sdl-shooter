@@ -1,3 +1,6 @@
+#ifndef _COMMON_H_
+#define _COMMON_H_
+
 //network sockets
 #include <sys/socket.h> 
 #include <sys/types.h>
@@ -17,6 +20,8 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 
-#define SERVER_PORT 80
+#define SERVER_PORT 18000
 #define MAXLINE 4096
 #define SA struct sockaddr
+
+#endif

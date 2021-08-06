@@ -1,5 +1,7 @@
 #include "common.h"
 
+static const char *httpmessage = "GET / HTTP/1.1\r\n\r\n";
+
 extern void err_n_die(const char *fmt, ...);
 
 int main(int argc, char **argv) {
@@ -25,7 +27,7 @@ int main(int argc, char **argv) {
   if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) < 0)  //connect to the server
     err_n_die("connect failed!");
 
-  sprintf(sendline, "GET / HTTP/1.1\r\n\r\n");
+  sprintf(sendline, "Hello from client!\r\n\r\n");
   sendbytes = strlen(sendline);
 
   if (write(sockfd, sendline, sendbytes) != sendbytes)
