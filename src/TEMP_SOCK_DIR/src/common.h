@@ -24,4 +24,15 @@
 #define MAXLINE 4096
 #define SA struct sockaddr
 
+typedef enum {
+  SAY_HELLO,
+  SAY_GOODBYE,
+  SAY_MY_NAME
+} COMMAND;
+
+typedef struct {
+    COMMAND command;
+    char name[30];
+} Command;
+
 #endif
