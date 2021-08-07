@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     if (n < 0)
       err_n_die("read error");
 
-    snprintf((char*)buff, sizeof(buff), "\nHTTP/1.0 200 OK \r\n\r\nHello From Sever!\n");
+    snprintf((char*)buff, sizeof(buff), "\nOK \r\n\r\nHello From Sever!\n");
 
     write(connfd, (char*)buff, strlen((char *)buff));
     close(connfd);

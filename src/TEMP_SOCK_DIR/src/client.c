@@ -1,4 +1,5 @@
 #include "common.h"
+#include <time.h>
 
 static const char *httpmessage = "GET / HTTP/1.1\r\n\r\n";
 
@@ -21,7 +22,22 @@ int main(int argc, char **argv) {
   Command *command = (Command *)malloc(sizeof(Command));
   memset(command, 0, sizeof(Command));
 
-  command->command = SAY_MY_NAME;
+  srand(time(0));
+  int i = rand() % 3;
+  switch (i) {
+    case (0) : {
+      command->command = SAY_HELLO;
+      break;
+    }
+    case (1) : {
+      command->command = SAY_GOODBYE;
+      break;
+    }
+    case (2)  : {
+      command->command = SAY_MY_NAME;
+      break;
+    }
+  }
   strcpy(command->name, "chris");
 
   parseArgs(argc, argv, &ipstr, &message, &port);
