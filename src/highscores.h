@@ -20,6 +20,7 @@ extern void drawStarfield(void);
 extern void drawText(int x, int y, int r, int g, int b, int align, char *format, ...);
 extern void initStage(void);
 extern void initTitle(void);
+extern void addScoreToDB(int score, char *name);
 
 static Highscore *newHighscore;
 static int cursorBlink;

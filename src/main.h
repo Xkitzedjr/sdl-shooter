@@ -17,6 +17,7 @@ extern void loadMusic(char *filename);
 extern void playMusic(int repeat);
 extern void initGame(void);
 extern void initTitle(void);
+extern void initDB(void);
 
 App app;
 Stage stage;

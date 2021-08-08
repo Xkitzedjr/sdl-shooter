@@ -2,3 +2,4 @@ bin/*
 shooter
 tags
 TAGS
+*.db

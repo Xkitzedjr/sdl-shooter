@@ -141,6 +141,7 @@ static void doNameInput(void) {
     if (app.keyboard[SDL_SCANCODE_RETURN]) {
         if (strlen(newHighscore->name) == 0)
             STRNCPY(newHighscore->name, "ANONYMOUS", MAX_SCORE_NAME_LENGTH);
+        addScoreToDB(newHighscore->score, newHighscore->name);
         newHighscore = NULL;
     }
 }
