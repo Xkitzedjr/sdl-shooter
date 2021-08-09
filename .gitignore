@@ -5,3 +5,4 @@ TAGS
 src/TEMP_SOCK_DIR/bin/*
 src/TEMP_SOCK_DIR/client
 src/TEMP_SOCK_DIR/server
+*.db
