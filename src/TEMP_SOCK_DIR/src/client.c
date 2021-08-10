@@ -1,23 +1,22 @@
-#include "common.h"
-#include <time.h>
+#include "client.h"
 
-static const char *httpmessage = "GET / HTTP/1.1\r\n\r\n";
+// argument format: ip port message
+// default ip 127.0.1.1 (loopback)
+// default port 18000 (unused)
+// default message "\nHello from Client!\r\n\r\n"
 
-extern void err_n_die(const char *fmt, ...);
+void *runClient(void * args) {
 
-void parseArgs(const int argc, char **argv, char **ipstr, char **message, int *port);
-
-int main(int argc, char **argv) {
-  // socket info contained as an int
-  int sockfd, n;
+  int sockfd, n;  // socket info contained as an int
   int sendbytes;
-  // struct for containing server address and port
-  struct sockaddr_in servaddr;
-  char sendline[MAXLINE];
+  struct sockaddr_in servaddr; // struct for containing server address and port
   char recvline[MAXLINE];
-  char *ipstr = argv[1];
-  char *message;
-  int port;
+  char *ipstr = IP;
+  char *message = "Hello from client!\r\n\r\n";
+  int port = PORT;
+
+  //parseArgs(argc, argv, &ipstr, &message, &port);
+  printf("Staring client using\nIP: %s\nPort: %d\nMessage: %s\n\n", ipstr, port, message);
 
   Command *command = (Command *)malloc(sizeof(Command));
   memset(command, 0, sizeof(Command));
@@ -40,8 +39,6 @@ int main(int argc, char **argv) {
   }
   strcpy(command->name, "chris");
 
-  parseArgs(argc, argv, &ipstr, &message, &port);
-
   // create socket
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //internet, stream type, 0=TCP, returns <0 on error
     err_n_die("Error while creating the socket!");
@@ -51,13 +48,10 @@ int main(int argc, char **argv) {
   servaddr.sin_port = htons(port); //htons host to network, short
 
   if (inet_pton(AF_INET, ipstr, &servaddr.sin_addr) <= 0) //converts string ip to binary ip and stores in address member
-    err_n_die("inet_pton error for %s", argv[1]);
+    err_n_die("inet_pton error for %s", port);
 
   if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) < 0)  //connect to the server
     err_n_die("connect failed!");
-
-  //sprintf(sendline, message);
-  //sendbytes = strlen(sendline);
 
   sendbytes = sizeof(Command);
 
@@ -66,10 +60,6 @@ int main(int argc, char **argv) {
     printf("bytes sent = %d\nsize of Command = %d", sendbytes, sizeof(Command));
   }
 
-  /*
-  if (write(sockfd, sendline, sendbytes) != sendbytes)
-    err_n_die("write error");
-  */
   while ((n = read(sockfd, recvline, MAXLINE-1)) > 0) {
     printf("%s", recvline);
   }
@@ -81,22 +71,32 @@ int main(int argc, char **argv) {
 }
 
 void parseArgs(const int argc, char **argv, char **ipstr, char **message, int *port) {
-   if (argc < 2)
+  if (argc > 4) {
     err_n_die("usage: %s <server address> (optional)<port> (optional)<message>", argv[0]);
+  }
+
+  if (argc >= 2) {
+    *ipstr = argv[1];
+  }
+  else {
+    *ipstr = IP;
+  }
 
   if (argc >= 3) {
     printf("using port %s\n", argv[2]);
     *port = atoi(argv[2]);
   }
   else
-    *port = SERVER_PORT;
+    *port = PORT;
 
-  if (argc >= 4){
+  if (argc == 4){
     *message = argv[3];
     strcat(*message, "\r\n\r\n");
   }
   else {
     *message = "Hello from client!\r\n\r\n";
   }
+
+  printf("Staring client using\nIP: %s\nPort: %d\nMessage: %s\n\n", *ipstr, *port, *message);
 
 }

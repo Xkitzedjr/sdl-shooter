@@ -25,6 +25,10 @@ static void logic(void) {
         initStage();
     if (app.keyboard[SDL_SCANCODE_M])
         initMulti();
+    if (app.keyboard[SDL_SCANCODE_P]) {
+        initConnection();
+        initMulti();
+    }
 }
 
 static void draw(void) {

@@ -1,33 +1,29 @@
-SERV = server
-CLIE = client
+proggy = thread_server
 CC = gcc
+CFLAGS = -g #-Wall 
+LDFLAGS = -pthread
 
 OUT = bin
-SEARCHPATH = src
-vpath = %.h $(SEARCHPATH)
-vpath = %.c $(SEARCHPATH)
+SEARCHPATH += src
+vpath %.h $(SEARCHPATH)
+vpath %.c $(SEARCHPATH)
 
-_SERV_OBJS += server.o
-_SERV_OBJS += err_n_die.o
-_CLIE_OBJS += client.o
-_CLIE_OBJS += err_n_die.o
+_OBJS += server.o
+_OBJS += err_n_die.o
+_OBJS += client.o
+_OBJS += main.o
 
-SERV_OBJS = $(patsubst %,$(OUT)/%,$(_SERV_OBJS))
-CLIE_OBJS = $(patsubst %,$(OUT)/%,$(_CLIE_OBJS))
+OBJS = $(patsubst %,$(OUT)/%,$(_OBJS))
 
-all: $(SERV) $(CLIE)
+
+all: $(proggy)
 
 $(OUT)/%.o: %.c %.h
 	@mkdir -p $(OUT)
 	$(CC) $(CFLAGS) -c -o $@ $< 
 
 clean:
-	$(RM) -rf $(OUT) $(SERV) $(CLIE)
+	$(RM) -rf $(OUT) $(proggy)
 
-CFLAGS = -g
-
-$(SERV): $(SERV_OBJS)
-	$(CC) -o $@ $(SERV_OBJS)
-
-$(CLIE): $(CLIE_OBJS)
-	$(CC) -o $@ $(CLIE_OBJS)
+$(proggy): $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS)

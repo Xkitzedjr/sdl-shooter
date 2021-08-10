@@ -62,7 +62,7 @@ static SDL_Texture *getTexture(char *name) {
 static void addTextureToCache(char *name, SDL_Texture *sdlTexture) {
 	Texture *texture;
 
-	texture = malloc(sizeof(Texture));
+	texture = (Texture *)malloc(sizeof(Texture));
 	memset(texture, 0, sizeof(Texture));
 	app.textureTail->next = texture;
 	app.textureTail = texture;

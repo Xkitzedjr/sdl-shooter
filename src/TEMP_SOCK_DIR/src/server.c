@@ -1,13 +1,6 @@
-#include "common.h"
+#include "server.h"
 
-#define PORT 18000
-
-extern void err_n_die(const char *fmt, ...);
-extern char *bin2hex(const unsigned char *input, size_t len);
-
-int parseArgs(const int argc, const char **argv, int *port);
-
-int main(int argc, char **argv) {
+void *runServer(void *args) {
   // listenfd will be the socket for listening
   // confd will be the socket for recieving data
   int listenfd, connfd, n;
@@ -15,14 +8,16 @@ int main(int argc, char **argv) {
   struct sockaddr_in servaddr;
   uint8_t buff[MAXLINE+1];
   uint8_t recvline[MAXLINE+1];
-  int port;
+  int port = PORT;
 
+  /*
   if (argc == 2){
     printf("using non-defualt port %s\n", argv[1]);
     port = atoi(argv[1]);
   }
   else
     port = PORT;
+  */
 
   if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     err_n_die("socket error");

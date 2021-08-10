@@ -17,6 +17,8 @@ _OBJS += background.o
 _OBJS += highscores.o
 _OBJS += title.o
 _OBJS += multi.o
+_OBJS += p2psocket.o
+_OBJS += err_n_die.o
 
 OBJS = $(patsubst %,$(OUT)/%,$(_OBJS))
 

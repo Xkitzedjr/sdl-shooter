@@ -1,5 +1,7 @@
 #include "multi.h"
 
+//TODO Make the alien a copy of the player
+
 //initialize stage, called at start
 void initMulti(void) {
     app.delegate.logic = logic;
@@ -104,7 +106,7 @@ static void doPlayer2(void) {
 static void fireBullet() {
     Entity *bullet;
 
-    bullet = (Entity *)malloc(sizeof(Entity));
+    bullet = malloc(sizeof(Entity));
     memset(bullet, 0, sizeof(Entity));
     stage.bulletTail->next = bullet;
     stage.bulletTail = bullet;
@@ -126,7 +128,7 @@ static void fireBullet() {
 static void p2fireBullet() {
     Entity *bullet;
 
-    bullet = (Entity *)malloc(sizeof(Entity));
+    bullet = malloc(sizeof(Entity));
     memset(bullet, 0, sizeof(Entity));
     stage.bulletTail->next = bullet;
     stage.bulletTail = bullet;
@@ -194,7 +196,7 @@ static void drawBullets(void) {
 
 //create player ship, called on start or when player dies
 static void initPlayer() {
-    player = (Entity *)malloc(sizeof(Entity));
+    player = malloc(sizeof(Entity));
     memset(player, 0, sizeof(Entity));
     stage.fighterTail->next = player;
     stage.fighterTail = player;
@@ -209,7 +211,7 @@ static void initPlayer() {
 }
 
 static void initPlayer2() {
-    player2 = (Entity *)malloc(sizeof(Entity));
+    player2 = malloc(sizeof(Entity));
     memset(player2, 0, sizeof(Entity));
     stage.fighterTail->next = player2;
     stage.fighterTail = player2;
@@ -400,7 +402,7 @@ static void addExplosions(int x, int y, int num) {
     Explosion *e;
 
     for (int i = 0; i < num; i++){
-        e = (Explosion *)malloc(sizeof(Explosion));
+        e = malloc(sizeof(Explosion));
         memset(e, 0, sizeof(Explosion));
         stage.explosionTail->next = e;
         stage.explosionTail = e;
@@ -445,7 +447,7 @@ static void addDebris(Entity *e) {
 
     for (y = 0; y <= h; y += h) {
         for (x = 0; x <= w; x += w) {
-            d = (Debris *)malloc(sizeof(Debris));
+            d = malloc(sizeof(Debris));
             memset(d, 0, sizeof(Debris));
             stage.debrisTail->next = d;
             stage.debrisTail = d;

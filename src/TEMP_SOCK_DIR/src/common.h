@@ -19,8 +19,11 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
+#include <stdint.h>
+#include <stddef.h>
 
-#define SERVER_PORT 18000
+#define PORT 18000
+#define IP "127.0.1.1"
 #define MAXLINE 4096
 #define SA struct sockaddr
 
