@@ -68,6 +68,8 @@ static void *runServer(void *args) {
             printf("\nserver recieved data: %f, %f\n", lastRecieved->x, lastRecieved->y);
 
             close(reader);
+
+            listenForMessage = false;
         }
     }
 
@@ -93,6 +95,7 @@ static void *startUpdater(void *args) {
             if ( write(sender, toBeSent, sizeof(Message)) != sizeof(Message) ) {
                 err_n_die("\nupdate write error\n");
             }
+            sendMessage = false;
         }
         //printf("\nClient sucsefully sent data\n");
     }
