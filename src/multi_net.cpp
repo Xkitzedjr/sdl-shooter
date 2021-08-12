@@ -70,39 +70,38 @@ static void logic(void) {
 //game logic for player, checks input and responds
 static void doPlayer(void) {
     if (player != NULL) {
-        player->dx = player->dy = 0;
-
-        if (player->reload > 0) player->reload--;
-
-        if (app.keyboard[SDL_SCANCODE_UP]) player->dy = -PLAYER_SPEED;
-        if (app.keyboard[SDL_SCANCODE_DOWN]) player->dy = PLAYER_SPEED;
-        if (app.keyboard[SDL_SCANCODE_RIGHT]) player->dx = PLAYER_SPEED;
-        if (app.keyboard[SDL_SCANCODE_LEFT]) player->dx = -PLAYER_SPEED;
-
-        if (app.keyboard[SDL_SCANCODE_SPACE] && player->reload <= 0) {
-            fireBullet();
-            playSound(SND_PLAYER_FIRE, CH_PLAYER);
-            currentStatus = OP_CODE::UPDATE_POS_AND_FIRE;
-        }
-        else {
-            currentStatus = OP_CODE::UPDATE_POS;
-        }
-
-        player->x += player->dx;
-        player->y += player->dy;
-
-        updateToBeSent(player->x, player->y, currentStatus);
-
         if (player->health == 0) {
             std::cout << "\nPlayer 1 has died\nPlayer 2 has scored a point" << std::endl;
             p2Score++;
 
             removeFighter(player);
+            updateToBeSent(0, 0, DEATH);
         }
-    }
 
-    else {
-        updateToBeSent(0, 0, DEATH);
+        else {
+            player->dx = player->dy = 0;
+
+            if (player->reload > 0) player->reload--;
+
+            if (app.keyboard[SDL_SCANCODE_UP]) player->dy = -PLAYER_SPEED;
+            if (app.keyboard[SDL_SCANCODE_DOWN]) player->dy = PLAYER_SPEED;
+            if (app.keyboard[SDL_SCANCODE_RIGHT]) player->dx = PLAYER_SPEED;
+            if (app.keyboard[SDL_SCANCODE_LEFT]) player->dx = -PLAYER_SPEED;
+
+            if (app.keyboard[SDL_SCANCODE_SPACE] && player->reload <= 0) {
+                fireBullet();
+                playSound(SND_PLAYER_FIRE, CH_PLAYER);
+                currentStatus = OP_CODE::UPDATE_POS_AND_FIRE;
+            }
+            else {
+                currentStatus = OP_CODE::UPDATE_POS;
+            }
+
+            player->x += player->dx;
+            player->y += player->dy;
+
+            updateToBeSent(player->x, player->y, currentStatus);
+        }
     }
 }
 
@@ -112,8 +111,6 @@ static void doPlayer2(void) {
 
         Message *p2status = new Message();
         getLastRecieved(p2status);
-
-        //std::cout << p2status->x << " " << p2status->y << std::endl;
 
         if (p2status->message == OP_CODE::DEATH) {
             std::cout << "\nPlayer 2 has died\nPlayer 1 has scored a point" << std::endl;
