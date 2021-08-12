@@ -3,8 +3,10 @@ OUT = bin
 SEARCHPATH += src
 vpath %.c $(SEARCHPATH)
 vpath %.h $(SEARCHPATH)
+vpath %.cpp $(SEARCHPATH)
+vpath %.hpp $(SEARCHPATH)
 
-DEPS += defs.h structs.h
+DEPS += defs.h structs.h 
 
 _OBJS += draw.o
 _OBJS += init.o input.o
@@ -16,6 +18,11 @@ _OBJS += text.o
 _OBJS += background.o
 _OBJS += highscores.o
 _OBJS += title.o
+_OBJS += multi.o
+_OBJS += err_n_die.o
+
+_OBJS += p2psocket.opp
+_OBJS += multi_net.opp
 
 OBJS = $(patsubst %,$(OUT)/%,$(_OBJS))
 
@@ -24,6 +31,10 @@ all: $(PROG)
 
 # compiling other source files.
 $(OUT)/%.o: %.c %.h $(DEPS)
+	@mkdir -p $(OUT)
+	$(CC) $(CFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+$(OUT)/%.opp: %.cpp %.hpp $(DEPS)
 	@mkdir -p $(OUT)
 	$(CC) $(CFLAGS) $(CXXFLAGS) -c -o $@ $<
 	

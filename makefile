@@ -1,5 +1,5 @@
 PROG = shooter
-CC = gcc
+CC = g++
 
 include common.mk
 

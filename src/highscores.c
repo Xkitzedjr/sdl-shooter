@@ -43,6 +43,15 @@ static void logic(void) {
 
         if (app.keyboard[SDL_SCANCODE_SPACE])
             initStage();
+
+        if (app.keyboard[SDL_SCANCODE_M])
+            initMulti();
+
+        if (app.keyboard[SDL_SCANCODE_P]) {
+            initConnection();
+            initMulti_Net();
+        }
+
     }
 
     if (++cursorBlink >= FPS) {
