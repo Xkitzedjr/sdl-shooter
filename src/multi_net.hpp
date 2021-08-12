@@ -2,18 +2,8 @@
 #define MULTI_NET_H_
 
 #include "common.h"
-
-typedef enum {
-  POS,
-  SHOT,
-  DIE
-} OP_CODE;
-
-typedef struct {
-    OP_CODE opCode;
-    int new_x;
-    int new_y;
-} Message;
+#include "common_multiplayer.hpp"
+#include <iostream>
 
 static Entity *player;
 static Entity *player2;
@@ -26,6 +16,7 @@ static SDL_Texture *explosionTexture;
 static int stageResetTime;
 static int p1Score;
 static int p2Score;
+static OP_CODE currentStatus;
 
 static void logic(void);
 static void doPlayer(void);
@@ -64,6 +55,7 @@ extern void blit(SDL_Texture *texture, int x, int y);
 extern void blitRect(SDL_Texture *texture, SDL_Rect *src, int x, int y);
 extern int collision(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2);
 extern void drawText(int x, int y, int r, int g, int b, int align, char *format, ...);
-
+extern void updateToBeSent(int x, int y, OP_CODE opCode);
+extern void getLastRecieved(Message *returnMessage);
 
 #endif // MULTI_H_

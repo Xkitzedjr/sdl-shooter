@@ -1,18 +1,41 @@
-#include "p2psocket.h"
+#include "p2psocket.hpp"
+
+// TODO
+// [-] server needs access to p2 ship struct
+// [-] updater needs to be able to send p1 ship struct
+// [~] make update init run in a while loop and use updater to change the message it sends
 
 void initConnection(void) {
-   pthread_t server_thread;
+    toBeSent = new Message();
+    lastRecieved = new Message();
 
-   printf("starting server\n");
-   pthread_create(&server_thread, NULL, runServer, NULL);
+    printf("starting server\n");
+    pthread_create(&server_thread, NULL, runServer, NULL);
 
-   pthread_t updater_thread;
-   printf("sending update\n");
-   pthread_create(&updater_thread, NULL, sendUpdate, NULL);
+    printf("starting updater\n");
+    pthread_create(&updater_thread, NULL, startUpdater, NULL);
 
-   //pthread_join(socket_id, NULL);
+    //pthread_join(socket_id, NULL);
 }
 
+void updateToBeSent(int x, int y, OP_CODE opCode) {
+    toBeSent->x = x;
+    toBeSent->y = y;
+    toBeSent->message = opCode;
+}
+
+void getLastRecieved(Message *returnMessage) {
+    *returnMessage = Message(*lastRecieved);
+}
+
+void killConnection(void) {
+    pthread_join(server_thread, NULL);
+    pthread_join(updater_thread, NULL);
+    delete toBeSent;
+    delete lastRecieved;
+}
+
+// the server will be listening for the other players status
 static void *runServer(void *args) {
     int listener, reader, talker, n;
     int port = DEFAULT_PORT;
@@ -25,28 +48,24 @@ static void *runServer(void *args) {
         struct sockaddr_in address;
         socklen_t address_len;
 
-        Placeholder *ph = (Placeholder *)malloc(sizeof(Placeholder));
-        memset(ph, 0, sizeof(Placeholder));
-
         printf("\nlistening on %s:%d\n", ip, port);
-        fflush(stdout);
+        fflush(stdin);
         reader = accept(listener, (struct sockaddr *) NULL , NULL);
 
-        while ( (n = read(reader, ph, sizeof(Placeholder))) > 0) {
-            fprintf(stdout, "\nRecieving Dtata\n");
+        while ( (n = read(reader, lastRecieved, sizeof(Message))) > 0) {
+            fprintf(stdin, "\nRecieving Dtata\n");
         }
 
-        printf("\nserver recieved data: %d, %d\n", ph->x, ph->y);
+        printf("\nserver recieved data: %f, %f\n", lastRecieved->x, lastRecieved->y);
 
         close(reader);
-
-        free(ph);
     }
 
     return NULL;
 }
 
-static void *sendUpdate(void *args) {
+// Updater will be sending the local players status to the remote player's server
+static void *startUpdater(void *args) {
     int sender, n;
     struct sockaddr_in server_address;
     char ip[] = DEFAULT_IP;
@@ -54,22 +73,13 @@ static void *sendUpdate(void *args) {
 
     initUpdater(&sender, &server_address, port, ip);
 
-    while(1) {
-        sleep(3);
-
-        Placeholder *ph = (Placeholder *)malloc(sizeof(Placeholder));
-        memset(ph, 0, sizeof(Placeholder));
-        ph->x = 1; ph->y = 2;
-
-        if ( write(sender, ph, sizeof(Placeholder)) != sizeof(Placeholder) ) {
+    while (1) {
+        if ( write(sender, toBeSent, sizeof(Message)) != sizeof(Message) ) {
             err_n_die("\nupdate write error\n");
         }
 
         printf("\nClient sucsefully sent data\n");
-
-        free(ph);
     }
-
 
     return NULL;
 }

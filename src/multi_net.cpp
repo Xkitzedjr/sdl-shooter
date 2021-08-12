@@ -1,9 +1,11 @@
-#include "multi.h"
-
-//TODO Make the alien a copy of the player
+#include "multi_net.hpp"
+// TODO
+// [] all p2 logic needs to be gotten from local
+// [] all p1 logic needs to be sent to remote server
+// [] create a static var OP_CODE to hold current p1 status
 
 //initialize stage, called at start
-void initMulti(void) {
+void initMulti_Net(void) {
     app.delegate.logic = logic;
     app.delegate.draw = draw;
 
@@ -13,18 +15,20 @@ void initMulti(void) {
     stage.explosionTail = &stage.explosionHead;
     stage.debrisTail = &stage.debrisHead;
 
-    p1bulletTexture = loadTexture("gfx/playerBullet.png");
-    player2Texture = loadTexture("gfx/enemy.png");
-    p2BulletTexture = loadTexture("gfx/alienBullet.png");
-    playerTexture = loadTexture("gfx/player.png");
-    background = loadTexture("gfx/background.png");
-    explosionTexture = loadTexture("gfx/explosion.png");
+    p1bulletTexture = loadTexture((char *)"gfx/playerBullet.png");
+    player2Texture = loadTexture((char *)"gfx/enemy.png");
+    p2BulletTexture = loadTexture((char *)"gfx/alienBullet.png");
+    playerTexture = loadTexture((char *)"gfx/player.png");
+    background = loadTexture((char *)"gfx/background.png");
+    explosionTexture = loadTexture((char *)"gfx/explosion.png");
 
     memset(app.keyboard, 0, sizeof(int) * MAX_KEYBOARD_KEYS);
 
     resetStage();
 
     initPlayer();
+
+    currentStatus = DEATH;
 
     initPlayer2();
 
@@ -42,8 +46,6 @@ static void logic(void) {
     doPlayer();
 
     doPlayer2();
-
-    doFighters();
 
     doBullets();
 
@@ -79,7 +81,28 @@ static void doPlayer(void) {
         if (app.keyboard[SDL_SCANCODE_SPACE] && player->reload <= 0) {
             fireBullet();
             playSound(SND_PLAYER_FIRE, CH_PLAYER);
+            currentStatus = OP_CODE::UPDATE_POS_AND_FIRE;
         }
+        else {
+            currentStatus = OP_CODE::UPDATE_POS;
+        }
+
+        player->x += player->dx;
+        player->y += player->dy;
+
+        updateToBeSent(player->x, player->y, currentStatus);
+
+        if (player->health == 0) {
+            std::cout << "\nPlayer 1 has died\nPlayer 2 has scored a point" << std::endl;
+            p2Score++;
+
+            free(player);
+            player = NULL;
+        }
+    }
+
+    else {
+        updateToBeSent(0, 0, DEATH);
     }
 }
 
@@ -87,26 +110,42 @@ static void doPlayer2(void) {
     if (player2 != NULL) {
         player2->dx = player2->dy = 0;
 
-        if (player2->reload > 0) player2->reload--;
+        Message *p2status = new Message();
+        getLastRecieved(p2status);
 
-        if (app.keyboard[SDL_SCANCODE_W]) player2->dy = -PLAYER_SPEED;
-        if (app.keyboard[SDL_SCANCODE_S]) player2->dy = PLAYER_SPEED;
-        if (app.keyboard[SDL_SCANCODE_D]) player2->dx = PLAYER_SPEED;
-        if (app.keyboard[SDL_SCANCODE_A]) player2->dx = -PLAYER_SPEED;
+        if (p2status->message == OP_CODE::DEATH) {
+            std::cout << "\nPlayer 2 has died\nPlayer 1 has scored a point" << std::endl;
+            p1Score++;
 
-        if (app.keyboard[SDL_SCANCODE_LCTRL] && player2->reload <= 0) {
-            p2fireBullet();
-            playSound(SND_PLAYER_FIRE, CH_PLAYER); //TODO sound channel
+            addExplosions(player2->x, player2->y, 32);
+
+            addDebris(player2);
+
+            playSound(SND_PLAYER_DIE, CH_ANY);
+
+            free(player2);
+            player2 = NULL;
         }
+
+        else {
+            player2->x = p2status->x + SCREEN_WIDTH / 2;
+            player2->y = p2status->y;
+
+            if (p2status->message == OP_CODE::UPDATE_POS_AND_FIRE) {
+                p2fireBullet();
+                playSound(SND_PLAYER_FIRE, CH_PLAYER); //TODO sound channel
+            }
+        }
+
+        delete p2status;
     }
 }
-
 
 //when the PLAYER ONLY fires a bullet
 static void fireBullet() {
     Entity *bullet;
 
-    bullet = malloc(sizeof(Entity));
+    bullet = static_cast<Entity *>(malloc(sizeof(Entity)));
     memset(bullet, 0, sizeof(Entity));
     stage.bulletTail->next = bullet;
     stage.bulletTail = bullet;
@@ -128,7 +167,7 @@ static void fireBullet() {
 static void p2fireBullet() {
     Entity *bullet;
 
-    bullet = malloc(sizeof(Entity));
+    bullet = static_cast<Entity *>(malloc(sizeof(Entity)));
     memset(bullet, 0, sizeof(Entity));
     stage.bulletTail->next = bullet;
     stage.bulletTail = bullet;
@@ -196,7 +235,7 @@ static void drawBullets(void) {
 
 //create player ship, called on start or when player dies
 static void initPlayer() {
-    player = malloc(sizeof(Entity));
+    player = static_cast<Entity *>(malloc(sizeof(Entity)));
     memset(player, 0, sizeof(Entity));
     stage.fighterTail->next = player;
     stage.fighterTail = player;
@@ -211,7 +250,7 @@ static void initPlayer() {
 }
 
 static void initPlayer2() {
-    player2 = malloc(sizeof(Entity));
+    player2 = static_cast<Entity *>(malloc(sizeof(Entity)));
     memset(player2, 0, sizeof(Entity));
     stage.fighterTail->next = player2;
     stage.fighterTail = player2;
@@ -223,40 +262,6 @@ static void initPlayer2() {
     SDL_QueryTexture(player2->texture, NULL, NULL, &player2->w, &player2->h);
 
     player2->side = SIDE_PLAYER2;
-}
-
-//game logic for all ships, enemy and player. Kenematics, destruction, free memory
-//removes from linked list
-static void doFighters(void) {
-    Entity *e, *prev;
-
-    prev = &stage.fighterHead;
-
-    for (e = stage.fighterHead.next; e != NULL; e = e->next) {
-        e->x += e->dx;
-        e->y += e->dy;
-
-        // if dead, then die
-        if (e->health == 0) {
-            if (e == player) {
-                player = NULL;
-                printf("\nplayer has died\n");
-                p2Score++;
-            }
-            else {
-                player2 = NULL;
-                printf("\nplayer 2 has died\n");
-                p1Score++;
-            }
-
-            if (e == stage.fighterTail) stage.fighterTail = prev;
-
-            prev->next = e->next;
-            free(e);
-            e = prev;
-        }
-        prev = e;
-    }
 }
 
 static void drawFighters(void) {
@@ -315,12 +320,6 @@ static void clipPlayer(void) {
         if (player->x > SCREEN_WIDTH / 2) player->x = SCREEN_WIDTH / 2;
         if (player->y > SCREEN_HEIGHT - player->h) player->y = SCREEN_HEIGHT - player->h;
     }
-    if (player2 != NULL) {
-        if (player2->x > SCREEN_WIDTH) player2->x = SCREEN_WIDTH;
-        if (player2->y < 0) player2->y = 0;
-        if (player2->x < SCREEN_WIDTH / 2) player2->x = SCREEN_WIDTH / 2;
-        if (player2->y > SCREEN_HEIGHT - player2->h) player2->y = SCREEN_HEIGHT - player2->h;
-    }
 }
 
 static void doExplosion(void) {
@@ -348,11 +347,12 @@ static void doExplosion(void) {
         prev = e;
     }
 }
+
 static int bulletHitFighter(Entity *b) {
     Entity *e;
 
     for (e = stage.fighterHead.next; e != NULL; e = e->next) {
-        if (e->side != b->side && collision(b->x, b->y, b->w, b->h, e->x, e->y, e->w, e->h)) {
+        if (e == player && e->side != b->side && collision(b->x, b->y, b->w, b->h, e->x, e->y, e->w, e->h)) {
             b->health = 0;
             e->health = 0;
 
@@ -402,7 +402,7 @@ static void addExplosions(int x, int y, int num) {
     Explosion *e;
 
     for (int i = 0; i < num; i++){
-        e = malloc(sizeof(Explosion));
+        e = static_cast<Explosion *>(malloc(sizeof(Explosion)));
         memset(e, 0, sizeof(Explosion));
         stage.explosionTail->next = e;
         stage.explosionTail = e;
@@ -447,7 +447,7 @@ static void addDebris(Entity *e) {
 
     for (y = 0; y <= h; y += h) {
         for (x = 0; x <= w; x += w) {
-            d = malloc(sizeof(Debris));
+            d = static_cast<Debris *>(malloc(sizeof(Debris)));
             memset(d, 0, sizeof(Debris));
             stage.debrisTail->next = d;
             stage.debrisTail = d;
@@ -493,8 +493,8 @@ static void drawExplosions(void) {
 
 static void drawHud(void) {
 
-    drawText(10, 10, 255, 255, 255, TEXT_LEFT, "PLAYER 1 SCORE: %03d", p1Score);
+    drawText(10, 10, 255, 255, 255, TEXT_LEFT, (char *)"PLAYER 1 SCORE: %03d", p1Score);
 
-    drawText(960, 10, 255, 0, 255, TEXT_RIGHT, "PLAYER 2 SCORE: %03d", p2Score);
+    drawText(960, 10, 255, 0, 255, TEXT_RIGHT, (char *)"PLAYER 2 SCORE: %03d", p2Score);
 
 }

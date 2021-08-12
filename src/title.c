@@ -27,7 +27,7 @@ static void logic(void) {
         initMulti();
     if (app.keyboard[SDL_SCANCODE_P]) {
         initConnection();
-        initMulti();
+        initMulti_Net();
     }
 }
 
