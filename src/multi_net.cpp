@@ -262,8 +262,10 @@ static void initPlayer2() {
 }
 
 static void drawFighters(void) {
-    blit(stage.player1->texture, stage.player1->x, stage.player1->y);
-    blit(stage.player2->texture, stage.player2->x, stage.player2->y);
+    if (stage.player1 != NULL)
+        blit(stage.player1->texture, stage.player1->x, stage.player1->y);
+    if (stage.player2 != NULL)
+        blit(stage.player2->texture, stage.player2->x, stage.player2->y);
 }
 
 //reset stage on player death
