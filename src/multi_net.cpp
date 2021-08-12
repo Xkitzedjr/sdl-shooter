@@ -350,23 +350,26 @@ static void doExplosion(void) {
 static int bulletHitFighter(Entity *b) {
     std::array<Entity *, 2> eArr = {stage.player1, stage.player2};
 
+    if (eArr[0] != NULL && eArr[1] != NULL) {
+
     // lazy crap
-    for (auto e : eArr) {
-        if (e == stage.player1 && e->side != b->side && collision(b->x, b->y, b->w, b->h, e->x, e->y, e->w, e->h)) {
-            b->health = 0;
-            e->health = 0;
+        for (auto e : eArr) {
+            if (e == stage.player1 && e->side != b->side && collision(b->x, b->y, b->w, b->h, e->x, e->y, e->w, e->h)) {
+                b->health = 0;
+                e->health = 0;
 
-            addExplosions(e->x, e->y, 32);
+                addExplosions(e->x, e->y, 32);
 
-            addDebris(e);
+                addDebris(e);
 
-            if (e == stage.player1)
-                playSound(SND_PLAYER_DIE, CH_PLAYER);
+                if (e == stage.player1)
+                    playSound(SND_PLAYER_DIE, CH_PLAYER);
 
-            else {
-                playSound(SND_PLAYER_DIE, CH_ANY);
+                else {
+                    playSound(SND_PLAYER_DIE, CH_ANY);
+                }
+                return 1;
             }
-            return 1;
         }
     }
     return 0;
