@@ -20,7 +20,7 @@
 #include <stddef.h>
 
 #define DEFAULT_PORT 18023
-#define DEFAULT_IP "127.0.1.22"
+#define DEFAULT_IP "127.0.1.1"
 
 extern void err_n_die(const char *fmt, ...);
 

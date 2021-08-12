@@ -3,7 +3,8 @@
 
 #include "common.h"
 #include "common_multiplayer.hpp"
-#include <array>
+#include <iostream>
+#include <string>
 
 static void *startUpdater(void *args);
 static void *runServer(void *args);
@@ -14,5 +15,7 @@ static Message *toBeSent;
 static Message *lastRecieved;
 static pthread_t server_thread;
 static pthread_t updater_thread;
+static bool sendMessage;
+static bool listenForMessage;
 
 #endif // P2PSOCKET_H_

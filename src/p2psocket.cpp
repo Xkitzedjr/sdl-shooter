@@ -1,9 +1,12 @@
 #include "p2psocket.hpp"
 
 // TODO
-// [-] server needs access to p2 ship struct
-// [-] updater needs to be able to send p1 ship struct
-// [~] make update init run in a while loop and use updater to change the message it sends
+// [X] server needs access to p2 ship struct
+// [X] updater needs to be able to send p1 ship struct
+//     - used message struct instead
+// [X] make update init run in a while loop and use updater to change the message it sends
+// [~] add ablility to specify port and ip
+// [] fix very erratic messages
 
 void initConnection(void) {
     toBeSent = new Message();
@@ -22,10 +25,16 @@ void updateToBeSent(int x, int y, OP_CODE opCode) {
     toBeSent->x = x;
     toBeSent->y = y;
     toBeSent->message = opCode;
+
+    // we have new info, send it
+    sendMessage = true;
 }
 
 void getLastRecieved(Message *returnMessage) {
     *returnMessage = Message(*lastRecieved);
+
+    // just got last message, ready for another
+    listenForMessage = true;
 }
 
 void killConnection(void) {
@@ -39,26 +48,27 @@ void killConnection(void) {
 static void *runServer(void *args) {
     int listener, reader, talker, n;
     int port = DEFAULT_PORT;
-    char ip[] = DEFAULT_IP;
     struct sockaddr_in server_address;
 
     initServer(&listener, &server_address, port);
 
     while(1) {
-        struct sockaddr_in address;
-        socklen_t address_len;
+        if (listenForMessage) {
+            struct sockaddr_in address;
+            socklen_t address_len;
 
-        printf("\nlistening on %s:%d\n", ip, port);
-        fflush(stdin);
-        reader = accept(listener, (struct sockaddr *) NULL , NULL);
+            printf("\nlistening on port:%d\n", port);
+            fflush(stdin);
+            reader = accept(listener, (struct sockaddr *) NULL , NULL);
 
-        while ( (n = read(reader, lastRecieved, sizeof(Message))) > 0) {
-            fprintf(stdin, "\nRecieving Dtata\n");
+            while ( (n = read(reader, lastRecieved, sizeof(Message))) > 0) {
+                fprintf(stdin, "\nRecieving Dtata\n");
+            }
+
+            printf("\nserver recieved data: %f, %f\n", lastRecieved->x, lastRecieved->y);
+
+            close(reader);
         }
-
-        printf("\nserver recieved data: %f, %f\n", lastRecieved->x, lastRecieved->y);
-
-        close(reader);
     }
 
     return NULL;
@@ -68,17 +78,23 @@ static void *runServer(void *args) {
 static void *startUpdater(void *args) {
     int sender, n;
     struct sockaddr_in server_address;
-    char ip[] = DEFAULT_IP;
     int port = DEFAULT_PORT;
+    std::string ip;
 
-    initUpdater(&sender, &server_address, port, ip);
+    std::cout << "IP: ";
+    std::cin >> ip;
+
+    ip = (ip.empty() ? DEFAULT_IP : ip);
+
+    initUpdater(&sender, &server_address, port, ip.c_str());
 
     while (1) {
-        if ( write(sender, toBeSent, sizeof(Message)) != sizeof(Message) ) {
-            err_n_die("\nupdate write error\n");
+        if (sendMessage) {
+            if ( write(sender, toBeSent, sizeof(Message)) != sizeof(Message) ) {
+                err_n_die("\nupdate write error\n");
+            }
         }
-
-        printf("\nClient sucsefully sent data\n");
+        //printf("\nClient sucsefully sent data\n");
     }
 
     return NULL;
@@ -126,7 +142,9 @@ static void initUpdater(int *sock_id, struct sockaddr_in *server_address, const 
         err_n_die("client inet_prton error for %s\n", port);
     }
 
-    if ( connect(*sock_id, (struct sockaddr *) server_address, sizeof(*server_address)) < 0 ) {
-        err_n_die("\nupdate connection failed\n");
+    while ( connect(*sock_id, (struct sockaddr *) server_address, sizeof(*server_address)) < 0 ) {
+        //err_n_die("\nupdate connection failed\n");
+        sleep(1);
+        printf("trying to connect\n");
     }
 }

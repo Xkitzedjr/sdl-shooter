@@ -1,8 +1,9 @@
 #include "multi_net.hpp"
 // TODO
-// [] all p2 logic needs to be gotten from local
-// [] all p1 logic needs to be sent to remote server
-// [] create a static var OP_CODE to hold current p1 status
+// [X] all p2 logic needs to be gotten from local
+// [X] all p1 logic needs to be sent to remote server
+// [X] create a static var OP_CODE to hold current p1 status
+// [] fix bug where game crashes on death
 
 //initialize stage, called at start
 void initMulti_Net(void) {
@@ -112,6 +113,8 @@ static void doPlayer2(void) {
 
         Message *p2status = new Message();
         getLastRecieved(p2status);
+
+        //std::cout << p2status->x << " " << p2status->y << std::endl;
 
         if (p2status->message == OP_CODE::DEATH) {
             std::cout << "\nPlayer 2 has died\nPlayer 1 has scored a point" << std::endl;
