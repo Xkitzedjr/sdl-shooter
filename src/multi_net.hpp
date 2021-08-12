@@ -40,6 +40,7 @@ static void drawDebris(void);
 static void drawExplosions(void);
 static void drawHud(void);
 static int bulletHitFighter(Entity *e);
+static void removeFighter(Entity *e);
 
 extern App app;
 extern Stage stage;

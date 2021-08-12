@@ -97,8 +97,7 @@ static void doPlayer(void) {
             std::cout << "\nPlayer 1 has died\nPlayer 2 has scored a point" << std::endl;
             p2Score++;
 
-            free(player);
-            player = NULL;
+            removeFighter(player);
         }
     }
 
@@ -126,8 +125,7 @@ static void doPlayer2(void) {
 
             playSound(SND_PLAYER_DIE, CH_ANY);
 
-            free(player2);
-            player2 = NULL;
+            removeFighter(player2);
         }
 
         else {
@@ -500,4 +498,18 @@ static void drawHud(void) {
 
     drawText(960, 10, 255, 0, 255, TEXT_RIGHT, (char *)"PLAYER 2 SCORE: %03d", p2Score);
 
+}
+
+static void removeFighter(Entity *e) {
+    Entity *p = &stage.fighterHead;
+
+    if (e == p)
+        stage.fighterHead = *stage.fighterHead.next;
+    else {
+        while (p->next != e) p = p->next;
+        p->next = e->next;
+    }
+
+    free(e);
+    e = NULL;
 }
