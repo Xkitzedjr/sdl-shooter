@@ -39,7 +39,9 @@ static void draw(void) {
     drawLogo();
 
     if (timeout % 40 < 20)
-        drawText(SCREEN_WIDTH / 2, 600, 255, 255, 255, TEXT_CENTER, "PRESS FIRE TO PLAY!");
+        drawText(SCREEN_WIDTH / 2, 400, 255, 255, 255, TEXT_CENTER, "PRESS FIRE TO PLAY!");
+        drawText(SCREEN_WIDTH / 2, 500, 255, 255, 255, TEXT_CENTER, "PRESS M FOR MULTIPLAY");
+        drawText(SCREEN_WIDTH / 2, 600, 255, 255, 255, TEXT_CENTER, "PRESS P FOR NETPLAY");
 }
 
 static void drawLogo(void) {

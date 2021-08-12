@@ -1,2 +1,3 @@
-[] make a multiplayer header file to store thread and socket includes
+[X] make a multiplayer header file to store thread and socket includes
     and struct and enum defs
+[X] add menu option for multiplayer

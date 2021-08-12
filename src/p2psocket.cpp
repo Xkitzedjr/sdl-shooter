@@ -6,7 +6,7 @@
 //     - used message struct instead
 // [X] make update init run in a while loop and use updater to change the message it sends
 // [~] add ablility to specify port and ip
-// [] fix very erratic messages
+// [X] fix very erratic messages
 
 void initConnection(void) {
     toBeSent = new Message();

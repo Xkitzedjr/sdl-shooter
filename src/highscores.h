@@ -21,6 +21,8 @@ extern void drawText(int x, int y, int r, int g, int b, int align, char *format,
 extern void initStage(void);
 extern void initTitle(void);
 extern void initMulti(void);
+extern void initConnection(void);
+extern void initMulti_Net(void);
 
 static Highscore *newHighscore;
 static int cursorBlink;
