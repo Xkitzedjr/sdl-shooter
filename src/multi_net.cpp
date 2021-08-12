@@ -10,8 +10,9 @@ void initMulti_Net(void) {
     app.delegate.logic = logic;
     app.delegate.draw = draw;
 
-    memset(&stage, 0, sizeof(Stage));
-    stage.fighterTail = &stage.fighterHead;
+    memset(&stage, 0, sizeof(M_Stage));
+    stage.player1 = NULL;
+    stage.player2 = NULL;
     stage.bulletTail = &stage.bulletHead;
     stage.explosionTail = &stage.explosionHead;
     stage.debrisTail = &stage.debrisHead;
@@ -28,8 +29,6 @@ void initMulti_Net(void) {
     resetStage();
 
     initPlayer();
-
-    currentStatus = DEATH;
 
     initPlayer2();
 
@@ -52,7 +51,7 @@ static void logic(void) {
 
     clipPlayer();
 
-    if ( (player == NULL || player2 == NULL) && --stageResetTime <= 0 ) {
+    if ( (stage.player1 == NULL || stage.player2 == NULL) && --stageResetTime <= 0 ) {
         resetStage();
         initPlayer();
         initPlayer2();
@@ -69,26 +68,27 @@ static void logic(void) {
 
 //game logic for player, checks input and responds
 static void doPlayer(void) {
-    if (player != NULL) {
-        if (player->health == 0) {
+    if (stage.player1 != NULL) {
+        if (stage.player1->health == 0) {
             std::cout << "\nPlayer 1 has died\nPlayer 2 has scored a point" << std::endl;
             p2Score++;
 
-            removeFighter(player);
-            updateToBeSent(0, 0, DEATH);
+            free(stage.player1);
+            stage.player1 = NULL;
+            updateToBeSent(0, 0, OP_CODE::DEATH);
         }
 
         else {
-            player->dx = player->dy = 0;
+            stage.player1->dx = stage.player1->dy = 0;
 
-            if (player->reload > 0) player->reload--;
+            if (stage.player1->reload > 0) stage.player1->reload--;
 
-            if (app.keyboard[SDL_SCANCODE_UP]) player->dy = -PLAYER_SPEED;
-            if (app.keyboard[SDL_SCANCODE_DOWN]) player->dy = PLAYER_SPEED;
-            if (app.keyboard[SDL_SCANCODE_RIGHT]) player->dx = PLAYER_SPEED;
-            if (app.keyboard[SDL_SCANCODE_LEFT]) player->dx = -PLAYER_SPEED;
+            if (app.keyboard[SDL_SCANCODE_UP]) stage.player1->dy = -PLAYER_SPEED;
+            if (app.keyboard[SDL_SCANCODE_DOWN]) stage.player1->dy = PLAYER_SPEED;
+            if (app.keyboard[SDL_SCANCODE_RIGHT]) stage.player1->dx = PLAYER_SPEED;
+            if (app.keyboard[SDL_SCANCODE_LEFT]) stage.player1->dx = -PLAYER_SPEED;
 
-            if (app.keyboard[SDL_SCANCODE_SPACE] && player->reload <= 0) {
+            if (app.keyboard[SDL_SCANCODE_SPACE] && stage.player1->reload <= 0) {
                 fireBullet();
                 playSound(SND_PLAYER_FIRE, CH_PLAYER);
                 currentStatus = OP_CODE::UPDATE_POS_AND_FIRE;
@@ -97,17 +97,17 @@ static void doPlayer(void) {
                 currentStatus = OP_CODE::UPDATE_POS;
             }
 
-            player->x += player->dx;
-            player->y += player->dy;
+            stage.player1->x += stage.player1->dx;
+            stage.player1->y += stage.player1->dy;
 
-            updateToBeSent(player->x, player->y, currentStatus);
+            updateToBeSent(stage.player1->x, stage.player1->y, currentStatus);
         }
     }
 }
 
 static void doPlayer2(void) {
-    if (player2 != NULL) {
-        player2->dx = player2->dy = 0;
+    if (stage.player2 != NULL) {
+        stage.player2->dx = stage.player2->dy = 0;
 
         Message *p2status = new Message();
         getLastRecieved(p2status);
@@ -116,18 +116,19 @@ static void doPlayer2(void) {
             std::cout << "\nPlayer 2 has died\nPlayer 1 has scored a point" << std::endl;
             p1Score++;
 
-            addExplosions(player2->x, player2->y, 32);
+            addExplosions(stage.player2->x, stage.player2->y, 32);
 
-            addDebris(player2);
+            addDebris(stage.player2);
 
             playSound(SND_PLAYER_DIE, CH_ANY);
 
-            removeFighter(player2);
+            free(stage.player2);
+            stage.player2 = NULL;
         }
 
         else {
-            player2->x = p2status->x + SCREEN_WIDTH / 2;
-            player2->y = p2status->y;
+            stage.player2->x = p2status->x + SCREEN_WIDTH / 2;
+            stage.player2->y = p2status->y;
 
             if (p2status->message == OP_CODE::UPDATE_POS_AND_FIRE) {
                 p2fireBullet();
@@ -148,16 +149,16 @@ static void fireBullet() {
     stage.bulletTail->next = bullet;
     stage.bulletTail = bullet;
 
-    bullet->x = player->x;
-    bullet->y = player->y;
+    bullet->x = stage.player1->x;
+    bullet->y = stage.player1->y;
     bullet->dx = PLAYER_BULLET_SPEED;
     bullet->health = 1;
     bullet->texture = p1bulletTexture;
     SDL_QueryTexture(bullet->texture, NULL, NULL, &bullet->w, &bullet->h);
 
-    bullet->y += (player->h / 2) - (bullet->h / 2);
+    bullet->y += (stage.player1->h / 2) - (bullet->h / 2);
 
-    player->reload = 8;
+    stage.player1->reload = 8;
 
     bullet->side = SIDE_PLAYER;
 }
@@ -170,16 +171,16 @@ static void p2fireBullet() {
     stage.bulletTail->next = bullet;
     stage.bulletTail = bullet;
 
-    bullet->x = player2->x;
-    bullet->y = player2->y;
+    bullet->x = stage.player2->x;
+    bullet->y = stage.player2->y;
     bullet->dx = -PLAYER_BULLET_SPEED;
     bullet->health = 1;
     bullet->texture = p2BulletTexture;
     SDL_QueryTexture(bullet->texture, NULL, NULL, &bullet->w, &bullet->h);
 
-    bullet->y += (player2->h / 2) - (bullet->h / 2);
+    bullet->y += (stage.player2->h / 2) - (bullet->h / 2);
 
-    player2->reload = 8;
+    stage.player2->reload = 8;
 
     bullet->side = SIDE_PLAYER2;
 }
@@ -233,10 +234,9 @@ static void drawBullets(void) {
 
 //create player ship, called on start or when player dies
 static void initPlayer() {
-    player = static_cast<Entity *>(malloc(sizeof(Entity)));
+    Entity *player = static_cast<Entity *>(malloc(sizeof(Entity)));
     memset(player, 0, sizeof(Entity));
-    stage.fighterTail->next = player;
-    stage.fighterTail = player;
+    stage.player1 = player;
 
     player->health = 1;
     player->x = 100;
@@ -248,10 +248,9 @@ static void initPlayer() {
 }
 
 static void initPlayer2() {
-    player2 = static_cast<Entity *>(malloc(sizeof(Entity)));
+    Entity *player2 = static_cast<Entity *>(malloc(sizeof(Entity)));
     memset(player2, 0, sizeof(Entity));
-    stage.fighterTail->next = player2;
-    stage.fighterTail = player2;
+    stage.player2 = player2;
 
     player2->health = 1;
     player2->x = SCREEN_WIDTH - 100;
@@ -263,24 +262,25 @@ static void initPlayer2() {
 }
 
 static void drawFighters(void) {
-    Entity *e;
-
-    for (e = stage.fighterHead.next ; e != NULL; e = e->next)
-        blit(e->texture, e->x, e->y);
+    blit(stage.player1->texture, stage.player1->x, stage.player1->y);
+    blit(stage.player2->texture, stage.player2->x, stage.player2->y);
 }
 
 //reset stage on player death
 static void resetStage(void) {
     Entity *e;
-
-    while (stage.fighterHead.next) {
-        e = stage.fighterHead.next;
-        stage.fighterHead.next = e->next;
-        free(e);
-    }
-
     Explosion *ex;
     Debris *d;
+
+    if (stage.player1 != NULL) {
+        free(stage.player1);
+        stage.player1 = NULL;
+    }
+
+    if (stage.player2 != NULL) {
+        free(stage.player2);
+        stage.player2 = NULL;
+    }
 
     while (stage.bulletHead.next) {
         e = stage.bulletHead.next;
@@ -300,9 +300,8 @@ static void resetStage(void) {
         free(d);
     }
 
-    memset(&stage, 0, sizeof(Stage));
+    memset(&stage, 0, sizeof(M_Stage));
 
-    stage.fighterTail = &stage.fighterHead;
     stage.bulletTail = &stage.bulletHead;
     stage.explosionTail = &stage.explosionHead;
     stage.debrisTail = &stage.debrisHead;
@@ -312,11 +311,11 @@ static void resetStage(void) {
 
 //prevent the player ship from goint outside of play area
 static void clipPlayer(void) {
-    if (player != NULL) {
-        if (player->x < 0) player->x = 0;
-        if (player->y < 0) player->y = 0;
-        if (player->x > SCREEN_WIDTH / 2) player->x = SCREEN_WIDTH / 2;
-        if (player->y > SCREEN_HEIGHT - player->h) player->y = SCREEN_HEIGHT - player->h;
+    if (stage.player1 != NULL) {
+        if (stage.player1->x < 0) stage.player1->x = 0;
+        if (stage.player1->y < 0) stage.player1->y = 0;
+        if (stage.player1->x > SCREEN_WIDTH / 2) stage.player1->x = SCREEN_WIDTH / 2;
+        if (stage.player1->y > SCREEN_HEIGHT - stage.player1->h) stage.player1->y = SCREEN_HEIGHT - stage.player1->h;
     }
 }
 
@@ -347,10 +346,11 @@ static void doExplosion(void) {
 }
 
 static int bulletHitFighter(Entity *b) {
-    Entity *e;
+    std::array<Entity *, 2> eArr = {stage.player1, stage.player2};
 
-    for (e = stage.fighterHead.next; e != NULL; e = e->next) {
-        if (e == player && e->side != b->side && collision(b->x, b->y, b->w, b->h, e->x, e->y, e->w, e->h)) {
+    // lazy crap
+    for (auto e : eArr) {
+        if (e == stage.player1 && e->side != b->side && collision(b->x, b->y, b->w, b->h, e->x, e->y, e->w, e->h)) {
             b->health = 0;
             e->health = 0;
 
@@ -358,7 +358,7 @@ static int bulletHitFighter(Entity *b) {
 
             addDebris(e);
 
-            if (e == player)
+            if (e == stage.player1)
                 playSound(SND_PLAYER_DIE, CH_PLAYER);
 
             else {
@@ -497,6 +497,7 @@ static void drawHud(void) {
 
 }
 
+/*
 static void removeFighter(Entity *e) {
     Entity *p = &stage.fighterHead;
 
@@ -510,3 +511,4 @@ static void removeFighter(Entity *e) {
     free(e);
     e = NULL;
 }
+*/

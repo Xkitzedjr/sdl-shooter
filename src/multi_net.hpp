@@ -4,9 +4,11 @@
 #include "common.h"
 #include "common_multiplayer.hpp"
 #include <iostream>
+#include <array>
 
-static Entity *player;
-static Entity *player2;
+// TODO move M_Stage struct here
+
+static M_Stage stage;
 static SDL_Texture *playerTexture;
 static SDL_Texture *p1bulletTexture;
 static SDL_Texture *player2Texture;
@@ -43,7 +45,6 @@ static int bulletHitFighter(Entity *e);
 static void removeFighter(Entity *e);
 
 extern App app;
-extern Stage stage;
 
 extern SDL_Texture *loadTexture(char *filename);
 extern void doBackground(void);
