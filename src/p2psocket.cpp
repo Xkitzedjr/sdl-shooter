@@ -30,7 +30,7 @@ void updateToBeSent(int x, int y, OP_CODE opCode) {
     sendMessage = true;
 }
 
-void getLastRecieved(Message *returnMessage) {
+void getLastRecieved(std::unique_ptr<Message> &returnMessage) {
     *returnMessage = Message(*lastRecieved);
 
     // just got last message, ready for another

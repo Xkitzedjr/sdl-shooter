@@ -5,6 +5,7 @@
 #include "common_multiplayer.hpp"
 #include <iostream>
 #include <string>
+#include <memory>
 
 static void *startUpdater(void *args);
 static void *runServer(void *args);

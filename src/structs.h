@@ -69,18 +69,6 @@ typedef struct {
 } Stage;
 
 typedef struct {
-	//stores all the game objects as linked lists
-	Entity *player1;
-	Entity *player2;
-	Entity bulletHead, *bulletTail;
-	Entity pointsHead, *pointsTail;
-	Explosion explosionHead, *explosionTail;
-	Debris debrisHead, *debrisTail;
-
-	int score;
-} M_Stage;
-
-typedef struct {
 	int x, y, speed;
 } Star;
 

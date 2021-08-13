@@ -3,19 +3,12 @@
 // [X] all p2 logic needs to be gotten from local
 // [X] all p1 logic needs to be sent to remote server
 // [X] create a static var OP_CODE to hold current p1 status
-// [] fix bug where game crashes on death
+// [X] fix bug where game crashes on death
 
 //initialize stage, called at start
 void initMulti_Net(void) {
     app.delegate.logic = logic;
     app.delegate.draw = draw;
-
-    memset(&stage, 0, sizeof(M_Stage));
-    stage.player1 = NULL;
-    stage.player2 = NULL;
-    stage.bulletTail = &stage.bulletHead;
-    stage.explosionTail = &stage.explosionHead;
-    stage.debrisTail = &stage.debrisHead;
 
     p1bulletTexture = loadTexture((char *)"gfx/playerBullet.png");
     player2Texture = loadTexture((char *)"gfx/enemy.png");
@@ -32,7 +25,7 @@ void initMulti_Net(void) {
 
     initPlayer2();
 
-    p1Score = p2Score = 0;
+    p1score = p2score = 0;
 
     stageResetTime = FPS * 3;
 }
@@ -57,7 +50,7 @@ static void logic(void) {
         initPlayer2();
     }
 
-    if ( (p1Score == MULTI_SCORE_LIMIT || p2Score == MULTI_SCORE_LIMIT) && --stageResetTime <= 0) {
+    if ( (p1score == MULTI_SCORE_LIMIT || p2score == MULTI_SCORE_LIMIT) && --stageResetTime <= 0) {
         initHighscore();
     }
 
@@ -68,17 +61,17 @@ static void logic(void) {
 
 //game logic for player, checks input and responds
 static void doPlayer(void) {
-    if (stage.player1 != NULL) {
+    if (stage.player1) {
         if (stage.player1->health == 0) {
             std::cout << "\nPlayer 1 has died\nPlayer 2 has scored a point" << std::endl;
-            p2Score++;
+            p2score++;
 
-            free(stage.player1);
-            stage.player1 = NULL;
+            stage.player1.reset();
             updateToBeSent(0, 0, OP_CODE::DEATH);
         }
 
         else {
+            OP_CODE currentStatus;
             stage.player1->dx = stage.player1->dy = 0;
 
             if (stage.player1->reload > 0) stage.player1->reload--;
@@ -106,15 +99,15 @@ static void doPlayer(void) {
 }
 
 static void doPlayer2(void) {
-    if (stage.player2 != NULL) {
+    if (stage.player2) {
         stage.player2->dx = stage.player2->dy = 0;
 
-        Message *p2status = new Message();
+        std::unique_ptr<Message> p2status{ new Message() };
         getLastRecieved(p2status);
 
         if (p2status->message == OP_CODE::DEATH) {
             std::cout << "\nPlayer 2 has died\nPlayer 1 has scored a point" << std::endl;
-            p1Score++;
+            p1score++;
 
             addExplosions(stage.player2->x, stage.player2->y, 32);
 
@@ -122,8 +115,7 @@ static void doPlayer2(void) {
 
             playSound(SND_PLAYER_DIE, CH_ANY);
 
-            free(stage.player2);
-            stage.player2 = NULL;
+            stage.player2.reset();
         }
 
         else {
@@ -135,19 +127,12 @@ static void doPlayer2(void) {
                 playSound(SND_PLAYER_FIRE, CH_PLAYER); //TODO sound channel
             }
         }
-
-        delete p2status;
     }
 }
 
 //when the PLAYER ONLY fires a bullet
 static void fireBullet() {
-    Entity *bullet;
-
-    bullet = static_cast<Entity *>(malloc(sizeof(Entity)));
-    memset(bullet, 0, sizeof(Entity));
-    stage.bulletTail->next = bullet;
-    stage.bulletTail = bullet;
+    UP<Entity> bullet{ new Entity() };
 
     bullet->x = stage.player1->x;
     bullet->y = stage.player1->y;
@@ -161,15 +146,12 @@ static void fireBullet() {
     stage.player1->reload = 8;
 
     bullet->side = SIDE_PLAYER;
+
+    stage.bullets.push_back(std::move(bullet));
 }
 
 static void p2fireBullet() {
-    Entity *bullet;
-
-    bullet = static_cast<Entity *>(malloc(sizeof(Entity)));
-    memset(bullet, 0, sizeof(Entity));
-    stage.bulletTail->next = bullet;
-    stage.bulletTail = bullet;
+    UP<Entity> bullet{ new Entity() };
 
     bullet->x = stage.player2->x;
     bullet->y = stage.player2->y;
@@ -183,28 +165,20 @@ static void p2fireBullet() {
     stage.player2->reload = 8;
 
     bullet->side = SIDE_PLAYER2;
+
+    stage.bullets.push_back(std::move(bullet));
 }
 
 //bullet logic, kenematics, destroy, free memory, remove from list
 static void doBullets(void)
 {
-    Entity *b, *prev;
-
-    prev = &stage.bulletHead;
-
-    for (b = stage.bulletHead.next; b != NULL; b = b->next) {
+    for (auto &&b : stage.bullets) {
         b->x += b->dx;
         b->y += b->dy;
 
         if (bulletHitFighter(b) || b->x > SCREEN_WIDTH || b->y > SCREEN_HEIGHT || b->x < -b->w || b->y < -b->h) {
-
-            if (b == stage.bulletTail) stage.bulletTail = prev;
-
-            prev->next = b->next;
-            free(b);
-            b = prev;
+            stage.bullets.remove(b);
         }
-        prev = b;
     }
 }
 
@@ -225,88 +199,51 @@ static void draw(void) {
 }
 
 static void drawBullets(void) {
-    Entity *b;
-
-    for (b = stage.bulletHead.next; b != NULL; b = b->next) {
+    for (auto &&b : stage.bullets) {
         blit(b->texture, b->x, b->y);
     }
 }
 
 //create player ship, called on start or when player dies
-static void initPlayer() {
-    Entity *player = static_cast<Entity *>(malloc(sizeof(Entity)));
-    memset(player, 0, sizeof(Entity));
-    stage.player1 = player;
+static void initPlayer(void) {
+    stage.player1 = UP<Entity> { new Entity() };
 
-    player->health = 1;
-    player->x = 100;
-    player->y = 100;
-    player->texture = playerTexture;
-    SDL_QueryTexture(player->texture, NULL, NULL, &player->w, &player->h);
+    stage.player1->health = 1;
+    stage.player1->x = 100;
+    stage.player1->y = 100;
+    stage.player1->texture = playerTexture;
+    SDL_QueryTexture(stage.player1->texture, NULL, NULL, &stage.player1->w, &stage.player1->h);
 
-    player->side = SIDE_PLAYER;
+    stage.player1->side = SIDE_PLAYER;
 }
 
-static void initPlayer2() {
-    Entity *player2 = static_cast<Entity *>(malloc(sizeof(Entity)));
-    memset(player2, 0, sizeof(Entity));
-    stage.player2 = player2;
+static void initPlayer2(void) {
+    stage.player2 = UP<Entity> { new Entity() };
 
-    player2->health = 1;
-    player2->x = SCREEN_WIDTH - 100;
-    player2->y = 100;
-    player2->texture = player2Texture;
-    SDL_QueryTexture(player2->texture, NULL, NULL, &player2->w, &player2->h);
+    stage.player2->health = 1;
+    stage.player2->x = SCREEN_WIDTH - 100;
+    stage.player2->y = 100;
+    stage.player2->texture = player2Texture;
+    SDL_QueryTexture(stage.player2->texture, NULL, NULL, &stage.player2->w, &stage.player2->h);
 
-    player2->side = SIDE_PLAYER2;
+    stage.player2->side = SIDE_PLAYER2;
 }
 
 static void drawFighters(void) {
-    if (stage.player1 != NULL)
+    if (stage.player1)
         blit(stage.player1->texture, stage.player1->x, stage.player1->y);
-    if (stage.player2 != NULL)
+    if (stage.player2)
         blit(stage.player2->texture, stage.player2->x, stage.player2->y);
 }
 
 //reset stage on player death
 static void resetStage(void) {
-    Entity *e;
-    Explosion *ex;
-    Debris *d;
+    stage.player1.reset();
+    stage.player2.reset();
 
-    if (stage.player1 != NULL) {
-        free(stage.player1);
-        stage.player1 = NULL;
-    }
-
-    if (stage.player2 != NULL) {
-        free(stage.player2);
-        stage.player2 = NULL;
-    }
-
-    while (stage.bulletHead.next) {
-        e = stage.bulletHead.next;
-        stage.bulletHead.next = e->next;
-        free(e);
-    }
-
-    while (stage.explosionHead.next) {
-        ex = stage.explosionHead.next;
-        stage.explosionHead.next = ex->next;
-        free(ex);
-    }
-
-    while (stage.debrisHead.next) {
-        d = stage.debrisHead.next;
-        stage.debrisHead.next = d->next;
-        free(d);
-    }
-
-    memset(&stage, 0, sizeof(M_Stage));
-
-    stage.bulletTail = &stage.bulletHead;
-    stage.explosionTail = &stage.explosionHead;
-    stage.debrisTail = &stage.debrisHead;
+    stage.bullets.clear();
+    stage.explosions.clear();
+    stage.debris.clear();
 
     stageResetTime = FPS * 3;
 }
@@ -322,39 +259,22 @@ static void clipPlayer(void) {
 }
 
 static void doExplosion(void) {
-    Explosion *e, *prev;
-
-    prev = &stage.explosionHead;
-
     //make explosion spread out
-    for (e = stage.explosionHead.next; e != NULL; e = e->next) {
+    for (auto &&e : stage.explosions) {
         e->x += e->dx;
         e->y += e->dy;
 
         //if alpha is <=0 it is completely transparent and is freed
         //and removed from list
         if (--e->a <= 0) {
-
-            if (e == stage.explosionTail)
-                stage.explosionTail = prev;
-
-            prev->next = e->next;
-            free(e);
-            e = prev;
+            stage.explosions.remove(e);
         }
-
-        prev = e;
     }
 }
 
-static int bulletHitFighter(Entity *b) {
-    std::array<Entity *, 2> eArr = {stage.player1, stage.player2};
-
-    if (eArr[0] != NULL && eArr[1] != NULL) {
-
-    // lazy crap
-        for (auto e : eArr) {
-            if (e == stage.player1 && e->side != b->side && collision(b->x, b->y, b->w, b->h, e->x, e->y, e->w, e->h)) {
+static int bulletHitFighter(UP<Entity> &b) {
+    auto &e = stage.player1;
+    if (e->side != b->side && collision(b->x, b->y, b->w, b->h, e->x, e->y, e->w, e->h)) {
                 b->health = 0;
                 e->health = 0;
 
@@ -362,25 +282,16 @@ static int bulletHitFighter(Entity *b) {
 
                 addDebris(e);
 
-                if (e == stage.player1)
                     playSound(SND_PLAYER_DIE, CH_PLAYER);
 
-                else {
                     playSound(SND_PLAYER_DIE, CH_ANY);
-                }
                 return 1;
             }
-        }
-    }
     return 0;
 }
 
 static void doDebris(void) {
-    Debris *d, *prev;
-
-    prev = &stage.debrisHead;
-
-    for (d = stage.debrisHead.next; d != NULL; d = d->next) {
+    for (auto &&d : stage.debris) {
         d->x += d->dx;
         d->y += d->dy;
 
@@ -388,27 +299,14 @@ static void doDebris(void) {
         d->dx *= 0.99;
 
         if (--d->life <= 0) {
-
-            if (d == stage.debrisTail)
-                stage.debrisTail = prev;
-
-            prev->next = d->next;
-            free(d);
-            d = prev;
+            stage.debris.remove(d);
         }
-
-        prev = d;
     }
 }
 
 static void addExplosions(int x, int y, int num) {
-    Explosion *e;
-
     for (int i = 0; i < num; i++){
-        e = static_cast<Explosion *>(malloc(sizeof(Explosion)));
-        memset(e, 0, sizeof(Explosion));
-        stage.explosionTail->next = e;
-        stage.explosionTail = e;
+        UP<Explosion> e = UP<Explosion>{new Explosion()};
 
         e->x = x + (rand() % 32) - (rand() % 33);
         e->y = y + (rand() % 32) - (rand() % 33);
@@ -438,11 +336,12 @@ static void addExplosions(int x, int y, int num) {
         }
 
         e->a = rand() % FPS * 3;
+
+        stage.explosions.push_back(std::move(e));
     }
 }
 
-static void addDebris(Entity *e) {
-    Debris *d;
+static void addDebris(UP<Entity> &e) {
     int x, y, w, h;
 
     w = e->w / 2;
@@ -450,10 +349,7 @@ static void addDebris(Entity *e) {
 
     for (y = 0; y <= h; y += h) {
         for (x = 0; x <= w; x += w) {
-            d = static_cast<Debris *>(malloc(sizeof(Debris)));
-            memset(d, 0, sizeof(Debris));
-            stage.debrisTail->next = d;
-            stage.debrisTail = d;
+            UP<Debris> d = UP<Debris>{ new Debris() };
 
             d->x = e->x + e->w / 2;
             d->y = e->y + e->h /2;
@@ -466,25 +362,23 @@ static void addDebris(Entity *e) {
             d->rect.y = y;
             d->rect.h = h;
             d->rect.w = w;
+
+            stage.debris.push_back(std::move(d));
         }
     }
 }
 
 static void drawDebris(void) {
-    Debris *d;
-
-    for (d = stage.debrisHead.next; d != NULL; d = d->next) {
+    for (auto &&d : stage.debris) {
         blitRect(d->texture, &d->rect, d->x, d->y);
     }
 }
 
 static void drawExplosions(void) {
-    Explosion *e;
-
     SDL_SetRenderDrawBlendMode(app.renderer, SDL_BLENDMODE_ADD);
     SDL_SetTextureBlendMode(explosionTexture, SDL_BLENDMODE_ADD);
 
-    for (e = stage.explosionHead.next; e != NULL; e = e->next) {
+    for (auto &&e : stage.explosions) {
         SDL_SetTextureColorMod(explosionTexture, e->r, e->g, e->b);
         SDL_SetTextureAlphaMod(explosionTexture, e->a);
 
@@ -496,24 +390,9 @@ static void drawExplosions(void) {
 
 static void drawHud(void) {
 
-    drawText(10, 10, 255, 255, 255, TEXT_LEFT, (char *)"PLAYER 1 SCORE: %03d", p1Score);
+    drawText(10, 10, 255, 255, 255, TEXT_LEFT, (char *)"PLAYER 1 SCORE: %03d", p1score);
 
-    drawText(960, 10, 255, 0, 255, TEXT_RIGHT, (char *)"PLAYER 2 SCORE: %03d", p2Score);
+    drawText(960, 10, 255, 0, 255, TEXT_RIGHT, (char *)"PLAYER 2 SCORE: %03d", p2score);
 
 }
 
-/*
-static void removeFighter(Entity *e) {
-    Entity *p = &stage.fighterHead;
-
-    if (e == p)
-        stage.fighterHead = *stage.fighterHead.next;
-    else {
-        while (p->next != e) p = p->next;
-        p->next = e->next;
-    }
-
-    free(e);
-    e = NULL;
-}
-*/
