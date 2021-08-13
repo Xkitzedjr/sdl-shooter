@@ -10,8 +10,6 @@
 
 template <class T> using UP = std::unique_ptr<T>;
 
-// TODO move M_Stage struct here
-
 extern App app;
 
 extern SDL_Texture *loadTexture(char *filename);
@@ -30,17 +28,13 @@ extern void killConnection(void);
 extern void initHighscore(void);
 
 struct M_Stage {
-	//stores all the game objects as linked lists
 	std::unique_ptr<Entity> player1;
 	std::unique_ptr<Entity> player2;
 	std::list<UP<Entity>> bullets;
-	std::list<UP<Explosion>>  explosions;
+	std::list<UP<Explosion>> explosions;
 	std::list<UP<Debris>> debris;
 
-    M_Stage() :
-        player1(std::unique_ptr<Entity>{new Entity()}),
-        player2(std::unique_ptr<Entity>{new Entity()})
-    {}
+    M_Stage() {}
 
     ~M_Stage() {
         killConnection();

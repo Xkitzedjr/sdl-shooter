@@ -73,7 +73,7 @@ static void *runServer(void *args) {
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 // Updater will be sending the local players status to the remote player's server
@@ -100,7 +100,7 @@ static void *startUpdater(void *args) {
         //printf("\nClient sucsefully sent data\n");
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static void initServer(int *sock_id, struct sockaddr_in *server_address, const int port) {

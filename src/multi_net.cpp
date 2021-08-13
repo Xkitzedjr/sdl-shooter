@@ -44,7 +44,7 @@ static void logic(void) {
 
     clipPlayer();
 
-    if ( (stage.player1 == NULL || stage.player2 == NULL) && --stageResetTime <= 0 ) {
+    if ( (!stage.player1 || !stage.player2) && --stageResetTime <= 0 ) {
         resetStage();
         initPlayer();
         initPlayer2();
@@ -172,12 +172,12 @@ static void p2fireBullet() {
 //bullet logic, kenematics, destroy, free memory, remove from list
 static void doBullets(void)
 {
-    for (auto &&b : stage.bullets) {
-        b->x += b->dx;
-        b->y += b->dy;
+    for (auto b = stage.bullets.begin() ; b != stage.bullets.end(); b++) {
+        (*b)->x += (*b)->dx;
+        (*b)->y += (*b)->dy;
 
-        if (bulletHitFighter(b) || b->x > SCREEN_WIDTH || b->y > SCREEN_HEIGHT || b->x < -b->w || b->y < -b->h) {
-            stage.bullets.remove(b);
+        if (bulletHitFighter(*b) || (*b)->x > SCREEN_WIDTH || (*b)->y > SCREEN_HEIGHT || (*b)->x < -(*b)->w || (*b)->y < -(*b)->h) {
+            b = stage.bullets.erase(b);
         }
     }
 }
@@ -250,7 +250,7 @@ static void resetStage(void) {
 
 //prevent the player ship from goint outside of play area
 static void clipPlayer(void) {
-    if (stage.player1 != NULL) {
+    if (stage.player1) {
         if (stage.player1->x < 0) stage.player1->x = 0;
         if (stage.player1->y < 0) stage.player1->y = 0;
         if (stage.player1->x > SCREEN_WIDTH / 2) stage.player1->x = SCREEN_WIDTH / 2;
@@ -260,19 +260,21 @@ static void clipPlayer(void) {
 
 static void doExplosion(void) {
     //make explosion spread out
-    for (auto &&e : stage.explosions) {
-        e->x += e->dx;
-        e->y += e->dy;
+    for (auto e = stage.explosions.begin(); e != stage.explosions.end(); e++) {
+        (*e)->x += (*e)->dx;
+        (*e)->y += (*e)->dy;
 
         //if alpha is <=0 it is completely transparent and is freed
         //and removed from list
-        if (--e->a <= 0) {
-            stage.explosions.remove(e);
+        if (--(*e)->a <= 0) {
+            e = stage.explosions.erase(e);
         }
     }
 }
 
 static int bulletHitFighter(UP<Entity> &b) {
+    if (!stage.player1) return 0;
+
     auto &e = stage.player1;
     if (e->side != b->side && collision(b->x, b->y, b->w, b->h, e->x, e->y, e->w, e->h)) {
                 b->health = 0;
@@ -291,15 +293,15 @@ static int bulletHitFighter(UP<Entity> &b) {
 }
 
 static void doDebris(void) {
-    for (auto &&d : stage.debris) {
-        d->x += d->dx;
-        d->y += d->dy;
+    for (auto d = stage.debris.begin(); d != stage.debris.end(); d++) {
+        (*d)->x += (*d)->dx;
+        (*d)->y += (*d)->dy;
 
-        d->dy *= 0.99;
-        d->dx *= 0.99;
+        (*d)->dy *= 0.99;
+        (*d)->dx *= 0.99;
 
-        if (--d->life <= 0) {
-            stage.debris.remove(d);
+        if (--(*d)->life <= 0) {
+            d = stage.debris.erase(d);
         }
     }
 }
