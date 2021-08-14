@@ -1,5 +1,9 @@
 #include "common.h"
 
+#include <iostream>
+#include <string>
+#include <map>
+
 extern Highscores highscores;
 extern App app;
 

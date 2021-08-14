@@ -1,4 +1,4 @@
-#include "db.h"
+#include "db.hpp"
 
 void initDB(void) {
     char *err;
@@ -63,4 +63,41 @@ void addScoreToDB(int score, char *name) {
     }
 
     sqlite3_close_v2(db);
+}
+
+void readFromDB(std::map<int, std::string> &scores) {
+    sqlite3 *db;
+    char *err;
+    char *getScores = "SELECT score FROM highscores;";
+    char *getNames = "SELECT name FROM highscores;";
+
+    int rc = sqlite3_open("highscore.db", &db);
+    if (rc != SQLITE_OK) {
+        printf("error %s\n", err);
+        exit(EXIT_FAILURE);
+    }
+
+    rc = sqlite3_exec(db, getScores, callback, &scores, &err);
+    if (rc != SQLITE_OK) {
+        printf("error %s\n", err);
+        exit(EXIT_FAILURE);
+    }
+
+    sqlite3_close(db);
+}
+
+static int callback(void *scores_voidptr, int argc, char **data, char **ColName) {
+    int i;
+    std::string name;
+    int score;
+    std::map<int, std::string> *scores = (std::map<int, std::string>*)(scores_voidptr);
+
+    for (i = 0; i < argc; i += 2) {
+        std::cout << "adding " << data[i] << ":" << data[i+1] << " to score map" << std::endl;
+        score = atoi(data[i] ? data[i] : "0");
+        name = data[i+1] ? data[i+1] : "NO_NAME";
+        scores->insert(std::pair<int, std::string>(score, name));
+    }
+
+    return 0;
 }

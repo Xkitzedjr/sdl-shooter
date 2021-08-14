@@ -1,4 +1,6 @@
-#include "highscores.h"
+#include "highscores.hpp"
+// TODO
+// [] Read highscores from db
 
 //this is like a prestage, a stage for before the stage starts
 

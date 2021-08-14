@@ -2,6 +2,27 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sqlite3.h>
+#include <map>
+#include <string>
+#include <iostream>
+
+int callback(void *data, int argc, char **argv, char **ColName) {
+    int i;
+    std::string name;
+    int score;
+
+    std::map<int, std::string> *scoreList = (std::map<int, std::string>*)(data);
+
+    for (i = 0; i < argc; i+=2) {
+        printf("%s = %s\n", ColName[i], argv[i] ? argv[i] : "NO_DATA");
+        score = atoi((argv[i] ? argv[i] : "0"));
+        name = (argv[i+1] ? argv[i+1] : "NO_DATA");
+        scoreList->insert(std::pair<int, std::string>(score, name));
+    }
+
+    //printf("\n");
+    return 0;
+}
 
 int main(int arc, char **argv) {
     char *err;
@@ -35,6 +56,7 @@ int main(int arc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
+    /*
     for (int i = 0; i < 10; i++) {
        char command[100] = "insert into highscores VALUES (";
        char I[10];
@@ -57,11 +79,18 @@ int main(int arc, char **argv) {
            exit(EXIT_FAILURE);
        }
     }
+*/
 
-    sqlite3_exec(db, "SELECT * FROM highscores", NULL, NULL, &err);
+    std::map<int, std::string> scoreList;
+
+    sqlite3_exec(db, "SELECT * FROM highscores", callback, &scoreList, &err);
 
     if (rc != SQLITE_OK) {
         printf("error: %s\n", err);
         exit(EXIT_FAILURE);
+    }
+
+    for (auto it = scoreList.begin(); it != scoreList.end(); it++) {
+        std::cout << it->first << " => " << it->second << std::endl;
     }
 }
