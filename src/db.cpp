@@ -32,8 +32,8 @@ void addScoreToDB(int score, char *name) {
     char *err;
     char command[4028] = "insert into highscores VALUES (";
     char score_str[MAX_SCORE_LEN];
-    char *command2 = ", '";
-    char *command3 = "')";
+    char *command2 = (char*)", '";
+    char *command3 = (char*)"')";
 
     int rc = sqlite3_open("highscore.db", &db);
     if (rc != SQLITE_OK) {
@@ -53,7 +53,9 @@ void addScoreToDB(int score, char *name) {
     strcat(command, name);
     strcat(command, command3);
 
+#ifdef DEBUG
     printf("executing command: %s\n", command);
+#endif
 
     rc = sqlite3_exec(db, command, NULL, NULL, &err);
 
@@ -65,11 +67,10 @@ void addScoreToDB(int score, char *name) {
     sqlite3_close_v2(db);
 }
 
-void readFromDB(std::map<int, std::string> &scores) {
+void readFromDB(std::map<int, std::string, std::greater<int>> &scores) {
     sqlite3 *db;
     char *err;
-    char *getScores = "SELECT score FROM highscores;";
-    char *getNames = "SELECT name FROM highscores;";
+    char *getScores = (char*)"SELECT * FROM highscores;";
 
     int rc = sqlite3_open("highscore.db", &db);
     if (rc != SQLITE_OK) {
@@ -90,12 +91,17 @@ static int callback(void *scores_voidptr, int argc, char **data, char **ColName)
     int i;
     std::string name;
     int score;
-    std::map<int, std::string> *scores = (std::map<int, std::string>*)(scores_voidptr);
+    std::map<int, std::string, std::greater<int>> *scores = (std::map<int, std::string, std::greater<int>>*)(scores_voidptr);
 
     for (i = 0; i < argc; i += 2) {
-        std::cout << "adding " << data[i] << ":" << data[i+1] << " to score map" << std::endl;
         score = atoi(data[i] ? data[i] : "0");
-        name = data[i+1] ? data[i+1] : "NO_NAME";
+        if (data[i+1])
+          name = data[i+1];
+        else
+          name = "NONAME";
+#ifdef DEBUG
+        std::cout << "adding " << score << ":" << name << " to score map" << std::endl;
+#endif
         scores->insert(std::pair<int, std::string>(score, name));
     }
 

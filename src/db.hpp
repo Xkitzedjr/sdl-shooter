@@ -10,4 +10,6 @@
 #define MAX_SCORE_LEN 128
 #define MAX_NAME_LEN 128
 
+static int callback(void *scores_voidptr, int argc, char **data, char **ColName);
+
 #endif

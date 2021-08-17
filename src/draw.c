@@ -17,7 +17,9 @@ SDL_Texture *loadTexture(char *filename) {
 	texture = getTexture(filename);
 
 	if (texture == NULL) {
+#ifdef DEBUG
 		SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO, "Loading %s", filename);
+#endif
 
 
 		texture = IMG_LoadTexture(app.renderer, filename);
@@ -62,7 +64,7 @@ static SDL_Texture *getTexture(char *name) {
 static void addTextureToCache(char *name, SDL_Texture *sdlTexture) {
 	Texture *texture;
 
-	texture = malloc(sizeof(Texture));
+	texture = (Texture *)malloc(sizeof(Texture));
 	memset(texture, 0, sizeof(Texture));
 	app.textureTail->next = texture;
 	app.textureTail = texture;

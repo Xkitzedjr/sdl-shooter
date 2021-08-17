@@ -1,8 +1,12 @@
 OUT = bin
+CFLAGS = -Wall -DDEBUG -g
+CXXFLAGS = -Wall -DDEBUG -g
 
 SEARCHPATH += src
 vpath %.c $(SEARCHPATH)
 vpath %.h $(SEARCHPATH)
+vpath %.cpp $(SEARCHPATH)
+vpath %.hpp $(SEARCHPATH)
 
 DEPS += defs.h structs.h
 
@@ -14,9 +18,9 @@ _OBJS += util.o
 _OBJS += sound.o
 _OBJS += text.o
 _OBJS += background.o
-_OBJS += highscores.o
 _OBJS += title.o
-_OBJS += db.o
+_OBJS += db.opp
+_OBJS += highscores.opp
 
 OBJS = $(patsubst %,$(OUT)/%,$(_OBJS))
 
@@ -26,7 +30,11 @@ all: $(PROG)
 # compiling other source files.
 $(OUT)/%.o: %.c %.h $(DEPS)
 	@mkdir -p $(OUT)
-	$(CC) $(CFLAGS) $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(CFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+$(OUT)/%.opp: %.cpp %.hpp $(DEPS)
+	@mkdir -p $(OUT)
+	$(CXX) $(CFLAGS) $(CXXFLAGS) -c -o $@ $<
 	
 # cleaning everything that can be automatically recreated with "make".
 clean:

@@ -1,19 +1,45 @@
 #include "highscores.hpp"
-// TODO
-// [] Read highscores from db
 
 //this is like a prestage, a stage for before the stage starts
+using ScoreMap = std::map<int, std::string, std::greater<int>>;
+using std::string;
+using std::vector;
 
 void initHighscoreTable(void) {
     memset(&highscores, 0, sizeof(Highscores));
+  
+    ScoreMap scoreMap;
+    readFromDB(scoreMap);
+    vector<int> scores;
+    vector<string> names;
 
-    for (int i; i < NUM_HIGHSCORES; i++) {
-        highscores.highscore[i].score = NUM_HIGHSCORES - i;
+    for (auto it = scoreMap.begin(); it != scoreMap.end(); it++){
+      scores.push_back(it->first);
+      names.push_back(it->second);
+    }
+
+#ifdef DEBUG
+    std::cout << "printing scores:" << std::endl;
+    for (auto i : scores) {
+      std::cout << i << std::endl;
+    }
+    std::cout << "printing names:" << std::endl;
+    for (auto i : names) {
+      std::cout << i << std::endl;
+    }
+#endif
+
+    // Make sure we have enough score records to print
+    while (scores.size() < NUM_HIGHSCORES) {
+      scores.push_back(20);
+    }
+    while (names.size() < NUM_HIGHSCORES) {
+      names.push_back("ANONYMOUS");
     }
 
     for (int i = 0; i < NUM_HIGHSCORES; i++) {
-        highscores.highscore[i].score = NUM_HIGHSCORES - i;
-        STRNCPY(highscores.highscore[i].name, "ANONYMOUS", MAX_SCORE_NAME_LENGTH);
+      highscores.highscore[i].score = scores[i];
+      STRNCPY(highscores.highscore[i].name, names[i].c_str(), MAX_SCORE_NAME_LENGTH);
     }
 
     newHighscore = NULL;

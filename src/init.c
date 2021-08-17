@@ -59,7 +59,6 @@ void initGame(void) {
 	initSounds();
 
 	initFonts();
-	printf("I made it this far\n");
 
 	initHighscoreTable();
 

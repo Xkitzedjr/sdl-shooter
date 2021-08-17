@@ -86,7 +86,7 @@ static void doPlayer(void) {
 static void fireBullet() {
     Entity *bullet;
 
-    bullet = malloc(sizeof(Entity));
+    bullet = (Entity *)malloc(sizeof(Entity));
     memset(bullet, 0, sizeof(Entity));
     stage.bulletTail->next = bullet;
     stage.bulletTail = bullet;
@@ -156,7 +156,7 @@ static void drawBullets(void) {
 
 //create player ship, called on start or when player dies
 static void initPlayer() {
-    player = malloc(sizeof(Entity));
+    player = (Entity *)malloc(sizeof(Entity));
     memset(player, 0, sizeof(Entity));
     stage.fighterTail->next = player;
     stage.fighterTail = player;
@@ -207,7 +207,7 @@ static void spawnEnemies(void) {
     Entity *enemy;
 
     if (--enemySpawnTimer <= 0) {
-        enemy = malloc(sizeof(Entity));
+        enemy = (Entity *)malloc(sizeof(Entity));
         memset(enemy, 0, sizeof(Entity));
         stage.fighterTail->next = enemy;
         stage.fighterTail = enemy;
@@ -339,7 +339,7 @@ static void doEnemies(void) {
 static void fireAlienBullet(Entity *e) {
     Entity *bullet;
 
-    bullet = malloc(sizeof(Entity));
+    bullet = (Entity *)malloc(sizeof(Entity));
     memset(bullet, 0, sizeof(Entity));
     stage.bulletTail->next = bullet;
     stage.bulletTail = bullet;
@@ -430,7 +430,7 @@ static void addExplosions(int x, int y, int num) {
     Explosion *e;
 
     for (int i = 0; i < num; i++){
-        e = malloc(sizeof(Explosion));
+        e = (Explosion *)malloc(sizeof(Explosion));
         memset(e, 0, sizeof(Explosion));
         stage.explosionTail->next = e;
         stage.explosionTail = e;
@@ -475,7 +475,7 @@ static void addDebris(Entity *e) {
 
     for (y = 0; y <= h; y += h) {
         for (x = 0; x <= w; x += w) {
-            d = malloc(sizeof(Debris));
+            d = (Debris *)malloc(sizeof(Debris));
             memset(d, 0, sizeof(Debris));
             stage.debrisTail->next = d;
             stage.debrisTail = d;
@@ -586,7 +586,7 @@ static void doPointsPod(void) {
 static void addPointsPod(int x, int y) {
     Entity *e;
 
-    e = malloc(sizeof(Entity));
+    e = (Entity *)malloc(sizeof(Entity));
     memset(e, 0, sizeof(Entity));
     stage.pointsTail->next = e;
     stage.pointsTail =e;

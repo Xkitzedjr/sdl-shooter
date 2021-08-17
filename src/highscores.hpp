@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <memory>
+#include <vector>
 
 extern Highscores highscores;
 extern App app;
@@ -25,6 +27,7 @@ extern void drawText(int x, int y, int r, int g, int b, int align, char *format,
 extern void initStage(void);
 extern void initTitle(void);
 extern void addScoreToDB(int score, char *name);
+extern void readFromDB(std::map<int, std::string, std::greater<int>> &scoreMap);
 
 static Highscore *newHighscore;
 static int cursorBlink;
